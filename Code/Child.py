@@ -55,7 +55,7 @@ def main():
 			sleep_time=sleep_time*MULTIPLICATION_FACTOR
 			print("\t\t\t|\tDecreasing Speed (↓)\t|\t", sleep_time)
 
-		speed.append(1/sleep_time)
+		speed.append(1/(sleep_time*500))
 		time.sleep(sleep_time)
 
 	# Plotting the speed

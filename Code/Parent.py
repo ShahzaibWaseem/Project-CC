@@ -2,6 +2,7 @@ import sys
 import time
 import argparse
 from socket import *
+from random import seed, randint
 from threading import Lock, Thread
 
 def argumentHandling():
@@ -26,9 +27,24 @@ IP, PORT, BUFFER_SIZE = argumentHandling()
 RECIEVE_SIZE=2048
 
 thread = None
+generatorThread=None
 lock = Lock()
 Buffer=[]
+generatedQueue=[]
 buffer_filled=0
+
+def generateData():
+	global Buffer, buffer_filled, lock, generatedQueue
+	seed(1)
+	while 1:
+		randomNumber= randint(0, 100)
+		lock.acquire()
+		if buffer_filled >= 0 and buffer_filled <= BUFFER_SIZE:
+			Buffer.append(randomNumber)
+			generatedQueue.append(randomNumber)
+			buffer_filled=buffer_filled+1
+		lock.release()
+		time.sleep(randint(3, 10))
 
 # Function for the thread to consume data from buffer
 def outFlow():
@@ -52,8 +68,12 @@ def main():
 	print("\nPinging...\nAsking for the number of iterations from the child")
 	iterations, childAddress=Socket.recvfrom(RECIEVE_SIZE)
 
+	generatorThread=Thread(target=generateData)
+	generatorThread.daemon=True	# Setting thread as daemon helps with exiting from the thread
+	generatorThread.start()
+
 	thread=Thread(target=outFlow)
-	thread.daemon=True	# Setting thread as daemon helps with exiting from the thread
+	thread.daemon=True			# Setting thread as daemon helps with exiting from the thread
 	thread.start()
 
 	print("\nRunning Code for", iterations.decode(), "Iterations")
@@ -76,6 +96,7 @@ def main():
 		print(iteration, "\t\t\t|\t", *Buffer, end="\t")
 
 	print()
+	print("\nThe Parent generated this list: ", *(generatedQueue))
 	Socket.close()
 	sys.exit()			# Responsible for Exiting the Code
 
